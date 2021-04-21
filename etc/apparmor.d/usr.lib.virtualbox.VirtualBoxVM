@@ -1,0 +1,66 @@
+# HardenedBox rv.3
+# ~LunaticSummer
+### Variables:
+@{DISK_FORMATS}=vdi,vhd
+@{UID}={[0-9],[1-9][0-9],[1-9][0-9][0-9],[1-9][0-9][0-9][0-9],[1-9][0-9][0-9][0-9][0-9],[1-9][0-9][0-9][0-9][0-9][0-9],[1-9][0-9][0-9][0-9][0-9][0-9][0-9],[1-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9],[1-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9],[1-4][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]}
+###
+/usr/lib/virtualbox/VirtualBoxVM {
+ # Core [Reviewed, Hardened, No Write, mMap on x-shared-lib files only]
+  /usr/lib/virtualbox/{,**} r,
+  /usr/lib/virtualbox/VirtualBoxVM m,
+  /usr/lib/virtualbox/VBox{AuthSimple,Auth,Dbg,DD2,DD,DDU,DragAndDropSvc,GuestControlSvc,GuestPropSvc,Headless,HostChannel,Keyboard,NetDHCP}.so m,
+  /usr/lib/virtualbox/VBox{NetNAT,Python2_7,Python3_7m,Python,RT,SDL,SharedClipboard,SharedFolders,SVGA3D,VMM,XPCOMC,XPCOM}.so m,
+  /usr/lib/virtualbox/{DbgPlugInDiggers,libvboxjxpcom,UICommon,VirtualBoxVM}.so m,
+  /usr/lib/virtualbox/components/VBox{C,SVCM,VMM,XPCOMIPCC}.so m,
+  /usr/lib/virtualbox/ExtensionPacks/Oracle_VM_VirtualBox_Extension_Pack/linux.amd64/{VBoxEhciR0.r0,VBoxNvmeR0.r0,VBoxVRDP.so,VBoxEhciR3.so,VBoxNvmeR3.so,VBoxUsbCardReaderR3.so,VDPluginCrypt.so,VBoxHostWebcam.so,VBoxPuelMain.so,VBoxUsbWebcamR3.so,VBoxPuelMainVM.so,VDPluginCrypt.so} m,
+  /usr/share/virtualbox/nls/VirtualBox_en.qm r,
+  /usr/share/virtualbox/VBoxGuestAdditions.iso r,
+  signal (send,receive) peer=/usr/lib/virtualbox/VirtualBoxVM,
+ # Libraries [Reviewed, Hardened, No Write, mMap on x-shared-lib files only]
+  /etc/ld.so.conf.d/x86_64-linux-gnu.conf r,
+  /usr/lib/x86_64-linux-gnu/*.so{,.*} mr,
+  /usr/lib/x86_64-linux-gnu/qt5/plugins/platforms/ r,
+  /usr/lib/x86_64-linux-gnu/qt5/plugins/platforms/libq{eglfs,linuxfb,minimal,minimalegl,offscreen,vnc,xcb}.so mr,
+  /usr/share/fonts/{,truetype/**} r,
+ # Networking [Reviewed, Hardened, No Write]
+  network inet dgram,
+  network inet stream,
+  network unix stream,
+  /etc/host.conf r,
+ # /dev [Reviewed, Hardened, No Write]
+  /dev/null w,
+  /dev/urandom r,
+  /dev/vboxdrv wr,
+ # /home [Reviewed, Hardened, Limited Write]
+  owner /home/*/.config/VirtualBox/{compreg,xpti}.dat{,.tmp} wr,
+  owner /home/*/.vm/.iso/{,*.iso} r,
+  owner /home/*/.vm/.Share/[0-9][0-9]/{,**} rw,
+  owner /home/*/.vm/*/*.vbox{,-prev} r,
+  owner /home/*/.vm/*/*.{@{DISK_FORMATS}} rw,
+  owner /home/*/.vm/*/Logs/{,VBox.log}{,.[0-9]} rw,
+  owner /home/*/.vm/*/Snapshots/{,*.sav} rw,
+  owner /home/*/.Xauthority r,
+  owner /run/user/@{UID}/ICEauthority r,
+  /tmp/.vbox-*-ipc/ipcd wr,
+ # Video [Reviewed, Hardened, No Write]
+  unix (receive, send, connect) peer=(addr=@/tmp/.X11-unix/X[0-4]),
+ # Denial
+  deny capability sys_nice,
+  deny network inet raw,
+  deny network inet6 stream,
+  deny ptrace (read,readby,trace,tracedby) peer=*,
+  deny /**/.uuid rwklmx,
+  deny /dev/null rwklmx,
+  deny /etc/{fonts/{,fonts.}conf*,gtk-3.0/**,ld.so.cache,ld.so.preload,locale.alias,nsswitch.conf,passwd,resolv.conf} rwklmx,
+  deny /home/*/{.cache,.fontconfig,.local}{,**} rwklmx,
+  deny /proc/{,**} rwklmx,
+  deny /run/systemd/resolve/stub-resolv.conf rwklmx,
+  deny /sys/{,**} rwklmx,
+  deny /usr/{bin,games,include,lib32,lib64,libexec,libx32,local/bin,local/etc,local/games,local/include,local/lib,local/sbin,local/share,local/src,sbin,src}/{,**} rwklmx,
+  deny /usr/local/share/fonts/{,**} rwklm,
+  deny /usr/lib/locale/** rwklm,
+  deny /usr/lib/x86_64-linux-gnu/{gconv,qt5/plugins/iconengines,qt5/plugins/imageformats,qt5/plugins/platforminputcontexts,qt5/plugins/platformthemes,qt5/plugins/xcbglintegrations}/{,**} rwklmx,
+  deny /usr/share/{fontconfig,icons,mime,nvidia,poppler,themes,X11,zoneinfo}/{,**} rwklmx,
+  deny /usr/share/fonts/{cMap,cmap,opentype,type1,X11,**/.uuid,.uuid}/ rwklmx,
+  deny /var/{,**} rwklmx,
+}
